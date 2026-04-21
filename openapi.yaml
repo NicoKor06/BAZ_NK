@@ -1,0 +1,615 @@
+openapi: 3.1.2
+info:
+  title: BAZ API SPEC
+  version: 3.1.2
+  description: Blog-API mit Benutzerverwaltung, Comments und OAuth2 (JWT)
+
+servers:
+  - url: http://localhost:8080
+    description: Lokaler Entwicklungsserver
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: http://localhost:8080/auth/login
+          scopes: { }
+
+  schemas:
+    User:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: "korzov"
+        firstname:
+          type: string
+          example: "Nico"
+        lastname:
+          type: string
+          example: "Korzov"
+        email:
+          type: string
+          format: email
+          example: "nico.korzov@digits.schwarz"
+        birthday:
+          type: string
+          format: date
+          example: "2006-01-02"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "user"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-04-19T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-04-19T10:00:00Z"
+        lastOnline:
+          type: string
+          format: date-time
+          example: "2026-04-19T12:00:00Z"
+
+    UserPublic:
+      type: object
+      properties:
+        userId:
+          type: integer
+        username:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        role:
+          type: string
+        lastOnline:
+          type: string
+          format: date-time
+
+    RegisterInput:
+      type: object
+      required:
+        - username
+        - firstname
+        - lastname
+        - email
+        - password
+        - birthday
+      properties:
+        username:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        birthday:
+          type: string
+          format: date
+
+    LoginInput:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIs..."
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in:
+          type: integer
+          example: 3600
+
+    Blog:
+      type: object
+      properties:
+        blogId:
+          type: integer
+          format: int64
+          example: 1
+        headline:
+          type: string
+          example: "Mein erster Blog"
+        body:
+          type: string
+          example: "Das ist der Inhalt meines Blogs."
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userId:
+          type: integer
+          description: "Autor des Blogs"
+          example: 1
+
+    BlogInput:
+      type: object
+      required:
+        - headline
+        - body
+      properties:
+        headline:
+          type: string
+        body:
+          type: string
+
+    BlogUpdateInput:
+      type: object
+      properties:
+        headline:
+          type: string
+        body:
+          type: string
+
+    Comment:
+      type: object
+      properties:
+        commentId:
+          type: integer
+          format: int64
+          example: 1
+        body:
+          type: string
+          example: "Toller Blog!"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        blogId:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+
+    CommentInput:
+      type: object
+      required:
+        - body
+      properties:
+        body:
+          type: string
+
+    CommentUpdateInput:
+      type: object
+      required:
+        - body
+      properties:
+        body:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+
+  parameters:
+    pageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+      description: "Seitennummer"
+    limitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 10
+        maximum: 100
+      description: "Einträge pro Seite"
+
+  responses:
+    Unauthorized:
+      description: "Nicht autorisiert – Token fehlt oder ungültig"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: "Ressource nicht gefunden"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    BadRequest:
+      description: "Ungültige Eingabe"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+security:
+  - oauth2: [ ]
+
+paths:
+  /auth/register:
+    post:
+      summary: "Benutzer registrieren"
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+            example:
+              username: "maxmustermann"
+              firstname: "Max"
+              lastname: "Mustermann"
+              email: "max@example.com"
+              password: "geheim123"
+              birthday: "1990-01-01"
+      responses:
+        "201":
+          description: "Registrierung erfolgreich"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /auth/login:
+    post:
+      summary: "Benutzer einloggen (OAuth2 Password Flow)"
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+            example:
+              username: "maxmustermann"
+              password: "geheim123"
+      responses:
+        "200":
+          description: "Login erfolgreich"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me:
+    get:
+      summary: "Eigenes Benutzerprofil abfragen (vollständig)"
+      tags: [User]
+      security:
+        - oauth2: [ ]
+      responses:
+        "200":
+          description: "Profil gefunden"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: "Eigenes Benutzerkonto löschen (inkl. aller Blogs & Comments)"
+      tags: [User]
+      security:
+        - oauth2: [ ]
+      responses:
+        "204":
+          description: "Konto erfolgreich gelöscht"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{userId}:
+    get:
+      summary: "Öffentliches Profil eines anderen Users abfragen (eingeschränkt)"
+      tags: [User]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Öffentliches Profil"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /blogs:
+    get:
+      summary: "Alle Blogs abfragen (mit Paginierung)"
+      tags: [Blog]
+      parameters:
+        - $ref: "#/components/parameters/pageParam"
+        - $ref: "#/components/parameters/limitParam"
+      responses:
+        "200":
+          description: "Liste aller Blogs"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Blog"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: "Einen neuen Blog erstellen"
+      tags: [Blog]
+      security:
+        - oauth2: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlogInput"
+            example:
+              headline: "Neuer Blog"
+              body: "Inhalt des Blogs"
+      responses:
+        "201":
+          description: "Blog erstellt"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blog"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /blogs/{blogId}:
+    get:
+      summary: "Einen einzelnen Blog abfragen"
+      tags: [Blog]
+      parameters:
+        - name: blogId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Blog gefunden"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blog"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: "Blog aktualisieren (nur für Autor)"
+      tags: [Blog]
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: blogId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlogUpdateInput"
+      responses:
+        "200":
+          description: "Blog aktualisiert"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blog"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: "Nicht der Autor"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: "Blog löschen (nur für Autor)"
+      tags: [Blog]
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: blogId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: "Blog gelöscht"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: "Nicht der Autor"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------- COMMENT ----------
+  /blogs/{blogId}/comments:
+    get:
+      summary: "Alle Comments eines Blogs abfragen"
+      tags: [Comment]
+      parameters:
+        - name: blogId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/pageParam"
+        - $ref: "#/components/parameters/limitParam"
+      responses:
+        "200":
+          description: "Comments des Blogs"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      summary: "Comment zu einem Blog erstellen"
+      tags: [Comment]
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: blogId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+            example:
+              body: "Super Beitrag!"
+      responses:
+        "201":
+          description: "Comment erstellt"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /comments/{commentId}:
+    get:
+      summary: "Einen einzelnen Comment abfragen"
+      tags: [Comment]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Comment gefunden"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: "Comment aktualisieren (nur für Autor)"
+      tags: [Comment]
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentUpdateInput"
+            example:
+              body: "Aktualisierter Kommentar"
+      responses:
+        "200":
+          description: "Comment aktualisiert"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: "Nicht der Autor"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: "Comment löschen (nur für Autor)"
+      tags: [Comment]
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: "Comment gelöscht"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: "Nicht der Autor"
+        "404":
+          $ref: "#/components/responses/NotFound"
