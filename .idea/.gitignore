@@ -1,8 +1,48 @@
-# Default ignored files
-/shelf/
-/workspace.xml
-# Editor-based HTTP Client requests
-/httpRequests/
-# Datasource local storage ignored files
-/dataSources/
-/dataSources.local.xml
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables (.env enthält Passwörter!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Database files (wenn du SQLite verwendest)
+*.db
+*.sqlite
+*.sqlite3
+
+# SQLC generated files (optional – viele committen sie)
+# internal/db/*.go
+# Aber lass die SQL-Queries drin!

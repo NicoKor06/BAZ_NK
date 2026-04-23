@@ -51,7 +51,7 @@ func (h *BlogHandler) GetByID(c *gin.Context) {
     c.JSON(http.StatusOK, blog)
 }
 
-func (h *BlogHandler) GetAll(c *gin.Context) {
+func (h *BlogHandler) GetAll(c *gin.Context) { // Parameter - der Gin Context (enthält Request + Response)
     page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
     limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
     
