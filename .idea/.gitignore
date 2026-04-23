@@ -45,4 +45,3 @@ Thumbs.db
 
 # SQLC generated files (optional – viele committen sie)
 # internal/db/*.go
-# Aber lass die SQL-Queries drin!
