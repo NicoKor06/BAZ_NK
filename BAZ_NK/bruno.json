@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "BAZ_NK",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

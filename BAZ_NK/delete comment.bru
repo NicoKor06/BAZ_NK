@@ -1,0 +1,21 @@
+meta {
+  name: delete comment
+  type: http
+  seq: 5
+}
+
+delete {
+  url: http://localhost:8080/comments/1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoibWF4bXVzdGVybWFubiIsInJvbGUiOiJ1c2VyIiwiZXhwIjoxNzc3NTQwMDE2LCJpYXQiOjE3Nzc0NTM2MTZ9.ucEmcwKNxJv-dlu2aibTJuFbazsW65aHU9K2qs_clko
+}
+
+body:json {
+  
+  
+  
+}
