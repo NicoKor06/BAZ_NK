@@ -1,0 +1,36 @@
+services:
+  # REST-API and Go-Backend
+  api:
+    container_name: baz_api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env          # Lädt alle Variablen aus deiner Datei
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+
+  db:
+    image: postgres:15-alpine
+    container_name: baz_postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=baz_api
+    ports:
+      - "5433:5432"       # Links (dein PC): 5433 | Rechts (Container-Intern): 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./internal/db/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d baz_api" ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:

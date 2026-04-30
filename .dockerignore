@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+
+# Environment
+.env
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+api
+api.exe
+
+# Testdateien
+*_test.go
+coverage.out
+
+# Docker
+Dockerfile
+.dockerignore
+
+# READMEs
+README.md

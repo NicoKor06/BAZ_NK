@@ -6,8 +6,9 @@ import (
 	"BAZ/internal/utils"
 	"context"
 	"errors"
-	"golang.org/x/crypto/bcrypt"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthUsecase struct {
