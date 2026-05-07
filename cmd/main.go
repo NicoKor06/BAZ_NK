@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
+	"BAZ/internal/cache"
 	"BAZ/internal/db"
 	"BAZ/internal/handler"
 	"BAZ/internal/middleware"
@@ -23,22 +25,21 @@ func main() {
 
 	ctx := context.Background()
 
-	// Datenbankverbindung mit pgx
+	// ========== DATENBANK ==========
 	conn, err := db.NewConnection(ctx)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
 	defer conn.Close(ctx)
 
-	// Queries aus der Verbindung
 	queries := db.NewQueriesFromConn(conn)
 
-	// Repositories
+	// ========== REPOSITORIES ==========
 	userRepo := postgres.NewUserRepository(queries)
 	blogRepo := postgres.NewBlogRepository(queries)
 	commentRepo := postgres.NewCommentRepository(queries)
 
-	// JWT Utility
+	// ========== JWT ==========
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		jwtSecret = "default-secret-change-me-in-production"
@@ -46,28 +47,50 @@ func main() {
 	}
 	jwtUtil := utils.NewJWTUtil(jwtSecret, 24)
 
-	// Usecases
+	// ========== REDIS CACHE ==========
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "localhost"
+	}
+	redisPort := os.Getenv("REDIS_PORT")
+	if redisPort == "" {
+		redisPort = "6379"
+	}
+
+	redisCache, err := cache.NewRedisCache(redisHost, redisPort, "", 0)
+	if err != nil {
+		log.Fatal("Failed to connect to Redis:", err)
+	}
+	defer redisCache.Close()
+
+	// ========== USECASES (mit Cache) ==========
 	authUsecase := usecase.NewAuthUsecase(userRepo, jwtUtil)
 	userUsecase := usecase.NewUserUsecase(userRepo, blogRepo, commentRepo)
-	blogUsecase := usecase.NewBlogUsecase(blogRepo, commentRepo)
+	blogUsecase := usecase.NewBlogUsecase(blogRepo, commentRepo, redisCache) // ← nur HIER!
 	commentUsecase := usecase.NewCommentUsecase(commentRepo, blogRepo)
 
-	// Handler
+	// ========== HANDLER ==========
 	authHandler := handler.NewAuthHandler(authUsecase)
 	userHandler := handler.NewUserHandler(userUsecase)
 	blogHandler := handler.NewBlogHandler(blogUsecase)
 	commentHandler := handler.NewCommentHandler(commentUsecase)
 
-	// Middleware
+	// ========== MIDDLEWARE ==========
 	authMiddleware := middleware.NewAuthMiddleware(jwtUtil)
+	cacheMiddleware := middleware.CacheMiddleware(redisCache, 5*time.Minute)
 
-	// Router
+	// ========== Redis ==========
+	ratelimiter := middleware.NewRateLimiter(redisCache, 100, time.Minute)
+
+	// ========== ROUTER ==========
 	appRouter := router.NewRouter(
 		authHandler,
 		userHandler,
 		blogHandler,
 		commentHandler,
 		authMiddleware,
+		cacheMiddleware,
+		ratelimiter,
 	)
 
 	engine := appRouter.Setup()

@@ -1,32 +1,50 @@
 package usecase
 
 import (
-	"BAZ/internal/domain"
-	"BAZ/internal/repository"
 	"context"
 	"errors"
 	"time"
+
+	"BAZ/internal/cache"
+	"BAZ/internal/domain"
+	"BAZ/internal/repository"
 )
 
 type BlogUsecase struct {
 	blogRepo    repository.BlogRepository
 	commentRepo repository.CommentRepository
+	cache       cache.Cache
 }
 
-func NewBlogUsecase(blogRepo repository.BlogRepository, commentRepo repository.CommentRepository) *BlogUsecase {
+func NewBlogUsecase(
+	blogRepo repository.BlogRepository,
+	commentRepo repository.CommentRepository,
+	cache cache.Cache,
+) *BlogUsecase {
 	return &BlogUsecase{
 		blogRepo:    blogRepo,
 		commentRepo: commentRepo,
+		cache:       cache,
 	}
 }
 
+// GetByID – Holt einen Blog aus dem Repository (nicht sich selbst!)
+func (b *BlogUsecase) GetByID(ctx context.Context, blogID int64) (*domain.Blog, error) {
+	return b.blogRepo.FindByID(ctx, blogID)
+}
+
+// GetAll – Holt alle Blogs (mit Paginierung)
+func (b *BlogUsecase) GetAll(ctx context.Context, page, limit int) ([]domain.Blog, int64, error) {
+	return b.blogRepo.FindAll(ctx, page, limit)
+}
+
+// Create – Erstellt einen neuen Blog
 func (b *BlogUsecase) Create(ctx context.Context, userID int64, req *domain.CreateBlogRequest) (*domain.Blog, error) {
-	now := time.Now()
 	blog := &domain.Blog{
 		Headline:  req.Headline,
 		Body:      req.Body,
-		CreatedAt: now,
-		UpdatedAt: now,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 		UserID:    userID,
 	}
 
@@ -35,33 +53,19 @@ func (b *BlogUsecase) Create(ctx context.Context, userID int64, req *domain.Crea
 		return nil, err
 	}
 
+	// Cache invalidieren
+	b.cache.Delete(ctx, "/blogs")
 	return blog, nil
 }
 
-func (b *BlogUsecase) GetByID(ctx context.Context, blogID int64) (*domain.Blog, error) {
-	return b.blogRepo.FindByID(ctx, blogID)
-}
-
-func (b *BlogUsecase) GetAll(ctx context.Context, page, limit int) ([]domain.Blog, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 10
-	}
-
-	return b.blogRepo.FindAll(ctx, page, limit)
-}
-
+// Update – Aktualisiert einen Blog
 func (b *BlogUsecase) Update(ctx context.Context, blogID, userID int64, req *domain.UpdateBlogRequest) (*domain.Blog, error) {
 	blog, err := b.blogRepo.FindByID(ctx, blogID)
 	if err != nil {
 		return nil, err
 	}
-
-	// Prüfen ob User der Autor ist
 	if blog.UserID != userID {
-		return nil, errors.New("you are not the author of this blog")
+		return nil, errors.New("you are not the author")
 	}
 
 	if req.Headline != "" {
@@ -77,21 +81,26 @@ func (b *BlogUsecase) Update(ctx context.Context, blogID, userID int64, req *dom
 		return nil, err
 	}
 
+	// Cache invalidieren
+	b.cache.Delete(ctx, "/blogs")
 	return blog, nil
 }
 
+// Delete – Löscht einen Blog
 func (b *BlogUsecase) Delete(ctx context.Context, blogID, userID int64) error {
 	blog, err := b.blogRepo.FindByID(ctx, blogID)
 	if err != nil {
 		return err
 	}
-
-	// Prüfen ob User der Autor ist
 	if blog.UserID != userID {
-		return errors.New("you are not the author of this blog")
+		return errors.New("you are not the author")
 	}
 
-	// Erst Comments löschen, dann Blog
-	_ = b.commentRepo.DeleteByBlogID(ctx, blogID)
-	return b.blogRepo.Delete(ctx, blogID)
+	if err := b.blogRepo.Delete(ctx, blogID); err != nil {
+		return err
+	}
+
+	// Cache invalidieren
+	b.cache.Delete(ctx, "/blogs")
+	return nil
 }

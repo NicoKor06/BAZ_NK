@@ -8,40 +8,46 @@ import (
 )
 
 type Router struct {
-	authHandler    *handler.AuthHandler
-	userHandler    *handler.UserHandler
-	blogHandler    *handler.BlogHandler
-	commentHandler *handler.CommentHandler
-	authMiddleware *middleware.AuthMiddleware
+	authHandler     *handler.AuthHandler
+	userHandler     *handler.UserHandler
+	blogHandler     *handler.BlogHandler
+	commentHandler  *handler.CommentHandler
+	authMiddleware  *middleware.AuthMiddleware
+	cacheMiddleware gin.HandlerFunc
+	ratelimiter     *middleware.RateLimiter
 }
 
+// NewRouter erwartet jetzt 6 Parameter (vorher 5)
 func NewRouter(
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
 	blogHandler *handler.BlogHandler,
 	commentHandler *handler.CommentHandler,
 	authMiddleware *middleware.AuthMiddleware,
+	cacheMiddleware gin.HandlerFunc,
+	ratelimiter *middleware.RateLimiter,
 ) *Router {
 	return &Router{
-		authHandler:    authHandler,
-		userHandler:    userHandler,
-		blogHandler:    blogHandler,
-		commentHandler: commentHandler,
-		authMiddleware: authMiddleware,
+		authHandler:     authHandler,
+		userHandler:     userHandler,
+		blogHandler:     blogHandler,
+		commentHandler:  commentHandler,
+		authMiddleware:  authMiddleware,
+		cacheMiddleware: cacheMiddleware,
+		ratelimiter:     ratelimiter,
 	}
 }
 
-// Setup konfiguriert alle Routes
 func (r *Router) Setup() *gin.Engine {
 	engine := gin.Default()
-
-	// ========== ÖFFENTLICHE ROUTES (kein Token nötig) ==========
+	engine.Use(r.ratelimiter.Middleware())
+	// Öffentliche Routen (kein Token nötig)
 	r.setupAuthRoutes(engine)
-	r.setupPublicBlogRoutes(engine)
+	r.setupPublicBlogRoutes(engine) // ← hier wird Cache angewendet
 	r.setupPublicUserRoutes(engine)
 	r.setupPublicCommentRoutes(engine)
 
-	// ========== GESCHÜTZTE ROUTES (Token erforderlich) ==========
+	// Geschützte Routen (Token erforderlich)
 	protected := engine.Group("")
 	protected.Use(r.authMiddleware.Authenticate())
 	{
@@ -66,7 +72,8 @@ func (r *Router) setupAuthRoutes(engine *gin.Engine) {
 func (r *Router) setupPublicBlogRoutes(engine *gin.Engine) {
 	blog := engine.Group("/blogs")
 	{
-		blog.GET("", r.blogHandler.GetAll)
+		// ⭐ CACHE WIRD HIER ANGEWENDET (nur auf GET)
+		blog.GET("", r.cacheMiddleware, r.blogHandler.GetAll)
 		blog.GET("/:blogId", r.blogHandler.GetByID)
 	}
 }
@@ -100,10 +107,8 @@ func (r *Router) setupProtectedBlogRoutes(group *gin.RouterGroup) {
 }
 
 func (r *Router) setupProtectedCommentRoutes(group *gin.RouterGroup) {
-	// Comment zu einem Blog erstellen
 	group.POST("/blogs/:blogId/comments", r.commentHandler.Create)
 
-	// Comments direkt bearbeiten/löschen
 	comment := group.Group("/comments")
 	{
 		comment.PUT("/:commentId", r.commentHandler.Update)
