@@ -5,6 +5,7 @@ import (
 	"BAZ/internal/repository"
 	"context"
 	"errors"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,13 +28,34 @@ func NewUserUsecase(
 }
 
 func (u *UserUsecase) GetOwnProfile(ctx context.Context, userID int64) (*domain.User, error) {
-	return u.userRepo.FindByID(ctx, userID)
-}
+	if userID == 0 {
+		return nil, errors.New("invalid user id")
+	}
 
-func (u *UserUsecase) GetPublicProfile(ctx context.Context, userID int64) (*domain.UserPublic, error) {
 	user, err := u.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
+	}
+
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	return user, nil
+}
+
+func (u *UserUsecase) GetPublicProfile(ctx context.Context, userID int64) (*domain.UserPublic, error) {
+	if userID == 0 {
+		return nil, errors.New("invalid user id")
+	}
+
+	user, err := u.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, errors.New("user not found")
 	}
 
 	return &domain.UserPublic{
@@ -47,21 +69,46 @@ func (u *UserUsecase) GetPublicProfile(ctx context.Context, userID int64) (*doma
 }
 
 func (u *UserUsecase) DeleteOwnAccount(ctx context.Context, userID int64, password string) error {
-	// User finden
+	if userID == 0 {
+		return errors.New("invalid user id")
+	}
+
+	if password == "" {
+		return errors.New("required password")
+	}
+
 	user, err := u.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return err
 	}
+	if user == nil {
+		return errors.New("user not found")
+	}
 
-	// Passwort prüfen (zusätzliche Sicherheit)
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		return errors.New("invalid password")
 	}
 
 	// Cascade Delete: erst Comments, dann Blogs, dann User
-	_ = u.commentRepo.DeleteByUserID(ctx, userID)
-	_ = u.blogRepo.DeleteByUserID(ctx, userID)
+	if err := u.commentRepo.DeleteByUserID(ctx, userID); err != nil {
+		return err
+	}
 
-	return u.userRepo.Delete(ctx, userID)
+	if err := u.blogRepo.DeleteByUserID(ctx, userID); err != nil {
+		return err
+	}
+
+	if err := u.userRepo.Delete(ctx, userID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *UserUsecase) UpdateLastOnline(ctx context.Context, userID int64) error {
+	if userID == 0 {
+		return errors.New("invalid user id")
+	}
+	return u.userRepo.UpdateLastOnline(ctx, userID)
 }

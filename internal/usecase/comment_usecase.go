@@ -21,9 +21,23 @@ func NewCommentUsecase(commentRepo repository.CommentRepository, blogRepo reposi
 }
 
 func (c *CommentUsecase) Create(ctx context.Context, blogID, userID int64, req *domain.CreateCommentRequest) (*domain.Comment, error) {
-	// Prüfen ob Blog existiert
-	_, err := c.blogRepo.FindByID(ctx, blogID)
+	if blogID == 0 {
+		return nil, errors.New("blogID is invalid")
+	}
+
+	if userID == 0 {
+		return nil, errors.New("userID is invalid")
+	}
+
+	if req.Body == "" {
+		return nil, errors.New("comment body cannot be empty")
+	}
+
+	blog, err := c.blogRepo.FindByID(ctx, blogID)
 	if err != nil {
+		return nil, errors.New("blog not found")
+	}
+	if blog == nil {
 		return nil, errors.New("blog not found")
 	}
 
@@ -45,27 +59,60 @@ func (c *CommentUsecase) Create(ctx context.Context, blogID, userID int64, req *
 }
 
 func (c *CommentUsecase) GetByID(ctx context.Context, commentID int64) (*domain.Comment, error) {
+	if commentID == 0 {
+		return nil, errors.New("commentID is invalid")
+	}
+
+	comment, err := c.commentRepo.FindByID(ctx, commentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if comment == nil {
+		return nil, errors.New("comment not found")
+	}
+
 	return c.commentRepo.FindByID(ctx, commentID)
 }
 
 func (c *CommentUsecase) GetByBlogID(ctx context.Context, blogID int64, page, limit int) ([]domain.Comment, int64, error) {
+	if blogID == 0 {
+		return nil, 0, errors.New("blogID is invalid")
+	}
+
 	if page < 1 {
 		page = 1
 	}
-	if limit < 1 || limit > 100 {
+	if limit < 1 {
 		limit = 10
+	}
+
+	if limit > 100 {
+		limit = 100
 	}
 
 	return c.commentRepo.FindByBlogID(ctx, blogID, page, limit)
 }
 
 func (c *CommentUsecase) Update(ctx context.Context, commentID, userID int64, req *domain.UpdateCommentRequest) (*domain.Comment, error) {
+	if commentID == 0 {
+		return nil, errors.New("invalid comment id")
+	}
+	if userID == 0 {
+		return nil, errors.New("user not authenticated")
+	}
+	if req.Body == "" {
+		return nil, errors.New("comment body cannot be empty")
+	}
+
 	comment, err := c.commentRepo.FindByID(ctx, commentID)
 	if err != nil {
 		return nil, err
 	}
+	if comment == nil {
+		return nil, errors.New("comment not found")
+	}
 
-	// Prüfen ob User der Autor ist
 	if comment.UserID != userID {
 		return nil, errors.New("you are not the author of this comment")
 	}
@@ -82,12 +129,21 @@ func (c *CommentUsecase) Update(ctx context.Context, commentID, userID int64, re
 }
 
 func (c *CommentUsecase) Delete(ctx context.Context, commentID, userID int64) error {
+	if commentID == 0 {
+		return errors.New("invalid comment id")
+	}
+	if userID == 0 {
+		return errors.New("user not authenticated")
+	}
+
 	comment, err := c.commentRepo.FindByID(ctx, commentID)
 	if err != nil {
 		return err
 	}
+	if comment == nil {
+		return errors.New("comment not found")
+	}
 
-	// Prüfen ob User der Autor ist
 	if comment.UserID != userID {
 		return errors.New("you are not the author of this comment")
 	}

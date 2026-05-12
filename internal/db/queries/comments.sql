@@ -23,7 +23,7 @@ WHERE comment_id = $1 AND user_id = $3
 RETURNING *;
 
 -- name: DeleteComment :exec
-DELETE FROM comments WHERE comment_id = $1 AND user_id = $2; # Der User selbst
+DELETE FROM comments WHERE comment_id = $1 AND user_id = $2; -- Der User selbst
 
 -- name: DeleteCommentsByBlog :exec
 DELETE FROM comments WHERE blog_id = $1;

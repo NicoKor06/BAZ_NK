@@ -3,8 +3,9 @@ package handler
 import (
 	"BAZ/internal/domain"
 	"BAZ/internal/usecase"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {

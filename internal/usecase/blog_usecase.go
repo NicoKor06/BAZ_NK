@@ -35,6 +35,18 @@ func (b *BlogUsecase) GetByID(ctx context.Context, blogID int64) (*domain.Blog, 
 
 // GetAll – Holt alle Blogs (mit Paginierung)
 func (b *BlogUsecase) GetAll(ctx context.Context, page, limit int) ([]domain.Blog, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	if limit < 1 {
+		limit = 10
+	}
+
+	if limit > 100 {
+		limit = 100
+	}
+
 	return b.blogRepo.FindAll(ctx, page, limit)
 }
 
