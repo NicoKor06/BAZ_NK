@@ -6,7 +6,7 @@ RUN go get -d -v ./... && \
   CGO_ENABLED=0 GOOS=linux go build -o app cmd/main.go
 
 # Release stage
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM schwarzit-gcr-docker-remote.jfrog.io/distroless/static-debian12:nonroot
 
 COPY --from=build-stage /build/app /app
 

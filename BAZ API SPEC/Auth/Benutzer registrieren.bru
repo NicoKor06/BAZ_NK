@@ -1,0 +1,22 @@
+meta {
+  name: Benutzer registrieren
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: bearer
+}
+
+body:json {
+  {
+    "username": "kochkevi",
+    "firstname": "kevin",
+    "lastname": "kochi",
+    "email": "kevin@example.com",
+    "password": "123456789",
+    "birthday": "2006-01-02T15:04:05Z"
+  }
+}

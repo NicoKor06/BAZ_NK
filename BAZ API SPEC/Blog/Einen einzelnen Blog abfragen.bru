@@ -1,0 +1,15 @@
+meta {
+  name: Einen einzelnen Blog abfragen
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/blogs/:blogId
+  body: none
+  auth: none
+}
+
+params:path {
+  blogId: 
+}

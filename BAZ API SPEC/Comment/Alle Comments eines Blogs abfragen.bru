@@ -1,0 +1,20 @@
+meta {
+  name: Alle Comments eines Blogs abfragen
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/blogs/:blogId/comments
+  body: none
+  auth: none
+}
+
+params:query {
+  ~page: 
+  ~limit: 
+}
+
+params:path {
+  blogId: 
+}

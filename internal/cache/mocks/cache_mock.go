@@ -1,4 +1,4 @@
-package cache
+package mocks
 
 import (
 	"context"

@@ -13,4 +13,6 @@ type UserRepository interface {
 	Update(ctx context.Context, user *domain.User) error
 	Delete(ctx context.Context, id int64) error
 	UpdateLastOnline(ctx context.Context, id int64) error
+	FindByProviderID(ctx context.Context, provider, providerID string) (*domain.User, error)
+	LinkProvider(ctx context.Context, userID int64, provider, providerID string) error
 }

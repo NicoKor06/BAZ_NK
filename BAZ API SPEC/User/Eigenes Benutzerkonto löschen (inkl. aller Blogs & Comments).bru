@@ -1,0 +1,11 @@
+meta {
+  name: Eigenes Benutzerkonto löschen (inkl. aller Blogs & Comments)
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/users/me
+  body: none
+  auth: none
+}

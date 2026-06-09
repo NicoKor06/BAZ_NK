@@ -11,7 +11,7 @@ servers:
 components:
   securitySchemes:
     oauth2:
-      type: oauth2
+      type: oauth
       flows:
         password:
           tokenUrl: http://localhost:8080/auth/login
@@ -44,7 +44,7 @@ components:
           example: "2006-01-02"
         role:
           type: string
-          enum: [user, admin]
+          enum: [ user, admin ]
           example: "user"
         createdAt:
           type: string
@@ -261,7 +261,7 @@ paths:
   /auth/register:
     post:
       summary: "Benutzer registrieren"
-      tags: [Auth]
+      tags: [ Auth ]
       requestBody:
         required: true
         content:
@@ -288,7 +288,7 @@ paths:
   /auth/login:
     post:
       summary: "Benutzer einloggen (OAuth2 Password Flow)"
-      tags: [Auth]
+      tags: [ Auth ]
       requestBody:
         required: true
         content:
@@ -311,7 +311,7 @@ paths:
   /users/me:
     get:
       summary: "Eigenes Benutzerprofil abfragen (vollständig)"
-      tags: [User]
+      tags: [ User ]
       security:
         - oauth2: [ ]
       responses:
@@ -327,7 +327,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     delete:
       summary: "Eigenes Benutzerkonto löschen (inkl. aller Blogs & Comments)"
-      tags: [User]
+      tags: [ User ]
       security:
         - oauth2: [ ]
       responses:
@@ -341,7 +341,7 @@ paths:
   /users/{userId}:
     get:
       summary: "Öffentliches Profil eines anderen Users abfragen (eingeschränkt)"
-      tags: [User]
+      tags: [ User ]
       parameters:
         - name: userId
           in: path
@@ -361,7 +361,7 @@ paths:
   /blogs:
     get:
       summary: "Alle Blogs abfragen (mit Paginierung)"
-      tags: [Blog]
+      tags: [ Blog ]
       parameters:
         - $ref: "#/components/parameters/pageParam"
         - $ref: "#/components/parameters/limitParam"
@@ -387,7 +387,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
     post:
       summary: "Einen neuen Blog erstellen"
-      tags: [Blog]
+      tags: [ Blog ]
       security:
         - oauth2: [ ]
       requestBody:
@@ -414,7 +414,7 @@ paths:
   /blogs/{blogId}:
     get:
       summary: "Einen einzelnen Blog abfragen"
-      tags: [Blog]
+      tags: [ Blog ]
       parameters:
         - name: blogId
           in: path
@@ -432,7 +432,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     put:
       summary: "Blog aktualisieren (nur für Autor)"
-      tags: [Blog]
+      tags: [ Blog ]
       security:
         - oauth2: [ ]
       parameters:
@@ -464,7 +464,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     delete:
       summary: "Blog löschen (nur für Autor)"
-      tags: [Blog]
+      tags: [ Blog ]
       security:
         - oauth2: [ ]
       parameters:
@@ -487,7 +487,7 @@ paths:
   /blogs/{blogId}/comments:
     get:
       summary: "Alle Comments eines Blogs abfragen"
-      tags: [Comment]
+      tags: [ Comment ]
       parameters:
         - name: blogId
           in: path
@@ -509,7 +509,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     post:
       summary: "Comment zu einem Blog erstellen"
-      tags: [Comment]
+      tags: [ Comment ]
       security:
         - oauth2: [ ]
       parameters:
@@ -543,7 +543,7 @@ paths:
   /comments/{commentId}:
     get:
       summary: "Einen einzelnen Comment abfragen"
-      tags: [Comment]
+      tags: [ Comment ]
       parameters:
         - name: commentId
           in: path
@@ -561,7 +561,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     put:
       summary: "Comment aktualisieren (nur für Autor)"
-      tags: [Comment]
+      tags: [ Comment ]
       security:
         - oauth2: [ ]
       parameters:
@@ -595,7 +595,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     delete:
       summary: "Comment löschen (nur für Autor)"
-      tags: [Comment]
+      tags: [ Comment ]
       security:
         - oauth2: [ ]
       parameters:

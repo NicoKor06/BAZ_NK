@@ -1,0 +1,21 @@
+meta {
+  name: Comment zu einem Blog erstellen
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/blogs/1/comments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoia29jaGtldmkiLCJyb2xlIjoidXNlciIsImV4cCI6MTc3ODc2MTc1NywiaWF0IjoxNzc4Njc1MzU3fQ.wAEikgnacN0Hwswhy2hvXh1OA0mBOINV8DQQBAnypoY
+}
+
+body:json {
+  {
+    "body": "das hier ist ein erneuter test von kechkevi"
+  }
+}

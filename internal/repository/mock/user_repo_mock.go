@@ -1,4 +1,4 @@
-package mocks
+package mock
 
 import (
 	"BAZ/internal/domain"
@@ -124,5 +124,12 @@ func (m *MockUserRepository) UpdateLastOnline(ctx context.Context, id int64) err
 	}
 
 	user.LastOnline = time.Now()
+	return nil
+}
+
+func (m *MockUserRepository) FindByProviderID(ctx context.Context, provider, providerID string) (*domain.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepository) LinkProvider(ctx context.Context, userID int64, provider, providerID string) error {
 	return nil
 }

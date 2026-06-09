@@ -1,0 +1,15 @@
+meta {
+  name: Blog löschen (nur für Autor)
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/blogs/2
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoia29jaGtldmkiLCJyb2xlIjoidXNlciIsImV4cCI6MTc3ODc2MTc1NywiaWF0IjoxNzc4Njc1MzU3fQ.wAEikgnacN0Hwswhy2hvXh1OA0mBOINV8DQQBAnypoY
+}

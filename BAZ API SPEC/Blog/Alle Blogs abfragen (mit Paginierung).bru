@@ -1,0 +1,16 @@
+meta {
+  name: Alle Blogs abfragen (mit Paginierung)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/blogs
+  body: json
+  auth: none
+}
+
+params:query {
+  ~page: 
+  ~limit: 
+}

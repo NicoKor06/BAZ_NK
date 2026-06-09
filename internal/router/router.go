@@ -12,9 +12,10 @@ type Router struct {
 	userHandler     *handler.UserHandler
 	blogHandler     *handler.BlogHandler
 	commentHandler  *handler.CommentHandler
+	oauthHandler    *handler.OAuthHandler
 	authMiddleware  *middleware.AuthMiddleware
 	cacheMiddleware gin.HandlerFunc
-	ratelimiter     *middleware.RateLimiter
+	rateLimiter     *middleware.RateLimiter
 }
 
 // NewRouter erwartet jetzt 6 Parameter (vorher 5)
@@ -23,27 +24,30 @@ func NewRouter(
 	userHandler *handler.UserHandler,
 	blogHandler *handler.BlogHandler,
 	commentHandler *handler.CommentHandler,
+	oauthHandler *handler.OAuthHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	cacheMiddleware gin.HandlerFunc,
-	ratelimiter *middleware.RateLimiter,
+	rateLimiter *middleware.RateLimiter,
 ) *Router {
 	return &Router{
 		authHandler:     authHandler,
 		userHandler:     userHandler,
 		blogHandler:     blogHandler,
 		commentHandler:  commentHandler,
+		oauthHandler:    oauthHandler,
 		authMiddleware:  authMiddleware,
 		cacheMiddleware: cacheMiddleware,
-		ratelimiter:     ratelimiter,
+		rateLimiter:     rateLimiter,
 	}
 }
 
 func (r *Router) Setup() *gin.Engine {
 	engine := gin.Default()
-	engine.Use(r.ratelimiter.Middleware())
+	engine.Use(r.rateLimiter.Middleware())
 	// Öffentliche Routen (kein Token nötig)
 	r.setupAuthRoutes(engine)
-	r.setupPublicBlogRoutes(engine) // ← hier wird Cache angewendet
+	r.setupOAuthRoutes(engine)
+	r.setupPublicBlogRoutes(engine)
 	r.setupPublicUserRoutes(engine)
 	r.setupPublicCommentRoutes(engine)
 
@@ -69,6 +73,16 @@ func (r *Router) setupAuthRoutes(engine *gin.Engine) {
 	}
 }
 
+func (r *Router) setupOAuthRoutes(engine *gin.Engine) {
+	if r.authHandler == nil {
+		panic("auth handler is nil")
+	}
+	auth := engine.Group("/auth")
+	{
+		auth.GET("/:provider/login", r.oauthHandler.Login)
+		auth.GET("/:provider/callback", r.oauthHandler.Callback)
+	}
+}
 func (r *Router) setupPublicBlogRoutes(engine *gin.Engine) {
 	blog := engine.Group("/blogs")
 	{

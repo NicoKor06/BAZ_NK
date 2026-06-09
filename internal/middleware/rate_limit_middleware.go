@@ -25,15 +25,15 @@ func NewRateLimiter(cache cache.Cache, limit int, window time.Duration) *RateLim
 }
 
 func (r *RateLimiter) Allow(ctx context.Context, key string) (bool, error) {
-	fullkey := "ratelimit" + key
+	fullKey := "rateLimit" + key
 
-	countStr, err := r.cache.Get(ctx, fullkey)
+	countStr, err := r.cache.Get(ctx, fullKey)
 	if err != nil {
 		return false, err
 	}
 
 	if countStr == "" {
-		r.cache.Set(ctx, fullkey, "1", r.window)
+		r.cache.Set(ctx, fullKey, "1", r.window)
 		return true, nil
 	}
 
@@ -47,13 +47,12 @@ func (r *RateLimiter) Allow(ctx context.Context, key string) (bool, error) {
 	}
 
 	newCount := count + 1
-	r.cache.Set(ctx, fullkey, strconv.Itoa(newCount), r.window)
+	r.cache.Set(ctx, fullKey, strconv.Itoa(newCount), r.window)
 	return true, nil
 }
 
 func (r *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Key = IP-Adresse (kann auch API-Key oder UserID sein)
 		key := c.ClientIP()
 
 		allowed, err := r.Allow(c.Request.Context(), key)
